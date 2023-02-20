@@ -2,6 +2,8 @@
 #include <tchar.h>
 #include <vector>
 #include <stack>
+#include <string>
+#include "screen.h"
 
 // Give each button a unique ID
 #define MATH_BUTTON 100
@@ -10,24 +12,17 @@
 #define NEWTON_BUTTON 103
 #define ROOT_BUTTON 104
 #define ANAL_ROOT_BUTTON 105
-#define LINEAR_CHECK 106
-#define LIN_ROOT_CHECK 107
-
-// A vector of all the handles to windows can represent each screen
-typedef std::vector<HWND> screen;
+#define LINEAR_FUNC_CHECK 108
+#define QUADRATIC_FUNC_CHECK 109
+#define CUBIC_FUNC_CHECK 110
+#define QUARTIC_FUNC_CHECK 111
 
 // Screens to be used
-screen home;
-screen math;
-screen roots;
-screen analyticalRoots;
+screen home("Choose an application.");
+screen math("Choose an application.");
+screen roots("Choose an appliction.");
+screen analyticalRoots("Choose a type of function.");
 
-// Keep track of the current screen and all the previous screen
-std::stack<screen*> prev;
-screen* curr;
-
-void goBack();
-void goTo(screen*);
 LRESULT CALLBACK WndProc(_In_ HWND, _In_ UINT, _In_ WPARAM, _In_ LPARAM);
 
 int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine, _In_ int nCmdShow)
@@ -118,7 +113,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	home.push_back(introPhysButton);
 	home.push_back(thermoButton);
 	home.push_back(mathButton);
-	curr = &home; // Start at the home screen
+	screen::setStart(&home);
 
 	// Button for finding the roots of functions
 	HWND findRootsButton = CreateWindow(
@@ -149,6 +144,61 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	);
 
 	roots.push_back(analyticalRootButton);
+
+	// Radio buttons to get the type of polynomial
+	HWND linearCheck = CreateWindow(
+		L"BUTTON",
+		L"Linear",
+		WS_CHILD | BS_AUTORADIOBUTTON | WS_GROUP | BS_TEXT,
+		1, 25,
+		100, 25,
+		hWnd,
+		(HMENU)LINEAR_FUNC_CHECK,
+		(HINSTANCE)GetWindowLongPtr(hWnd, GWLP_HINSTANCE),
+		NULL
+	);
+
+	HWND quadraticCheck = CreateWindow(
+		L"BUTTON",
+		L"Quadratic",
+		WS_CHILD | BS_AUTORADIOBUTTON | BS_TEXT,
+		1, 55,
+		100, 25,
+		hWnd,
+		(HMENU)QUADRATIC_FUNC_CHECK,
+		(HINSTANCE)GetWindowLongPtr(hWnd, GWLP_HINSTANCE),
+		NULL
+	);
+
+	HWND cubicCheck = CreateWindow(
+		L"BUTTON",
+		L"Cubic",
+		WS_CHILD | BS_AUTORADIOBUTTON | BS_TEXT,
+		1, 85,
+		100, 25,
+		hWnd,
+		(HMENU)CUBIC_FUNC_CHECK,
+		(HINSTANCE)GetWindowLongPtr(hWnd, GWLP_HINSTANCE),
+		NULL
+	);
+
+	HWND quarticCheck = CreateWindow(
+		L"BUTTON",
+		L"Quartic",
+		WS_CHILD | BS_AUTORADIOBUTTON | BS_TEXT,
+		1, 115,
+		100, 25,
+		hWnd,
+		(HMENU)QUARTIC_FUNC_CHECK,
+		(HINSTANCE)GetWindowLongPtr(hWnd, GWLP_HINSTANCE),
+		NULL
+	);
+
+	analyticalRoots.push_back(quarticCheck);
+	analyticalRoots.push_back(cubicCheck);
+	analyticalRoots.push_back(linearCheck);
+	analyticalRoots.push_back(quadraticCheck);
+	CheckRadioButton(hWnd, LINEAR_FUNC_CHECK, QUARTIC_FUNC_CHECK, QUARTIC_FUNC_CHECK);
 
 
 	// A back button that will always show no matter the current screen
@@ -183,7 +233,6 @@ LRESULT CALLBACK WndProc(_In_ HWND hWnd, _In_ UINT message, _In_ WPARAM wParam, 
 {
 	PAINTSTRUCT ps;
 	HDC hdc;
-	TCHAR greeting[] = _T("Choose an application!");
 
 	switch (message)
 	{
@@ -191,19 +240,22 @@ LRESULT CALLBACK WndProc(_In_ HWND hWnd, _In_ UINT message, _In_ WPARAM wParam, 
 		switch (LOWORD(wParam))
 		{
 		case MATH_BUTTON: // Each menu button will simply change the screen
-			goTo(&math);
+			screen::goTo(&math);
 			break;
 		case ROOT_BUTTON:
-			goTo(&roots);
+			screen::goTo(&roots);
+			break;
+		case ANAL_ROOT_BUTTON:
+			screen::goTo(&analyticalRoots);
 			break;
 		case BACK_BUTTON:
-			goBack();
+			screen::goBack();
 			break;
 		}
 		break;
 	case WM_PAINT:
 		hdc = BeginPaint(hWnd, &ps);
-		TextOut(hdc, 5, 5, greeting, _tcslen(greeting));
+		TextOut(hdc, 5, 5, (LPCWSTR)(screen::getCurr()->getText().c_str()), screen::getCurr()->getText().length());
 		EndPaint(hWnd, &ps);
 		break;
 	case WM_DESTROY:
@@ -215,34 +267,4 @@ LRESULT CALLBACK WndProc(_In_ HWND hWnd, _In_ UINT message, _In_ WPARAM wParam, 
 	}
 	
 	return 0;
-}
-
-// Will go back one screen
-void goBack()
-{
-	// If at home screen, do nothing
-	if (prev.empty())
-		return;
-
-	for (int i = 0; i < curr->size(); i++) // Hide every window on the current screen
-		ShowWindow(curr->at(i), SW_HIDE);
-	for (int i = 0; i < prev.top()->size(); i++) // Show every window on the previous screen
-		ShowWindow(prev.top()->at(i), SW_SHOW);
-	curr = prev.top();							// Update the current screen
-	prev.pop();									// Update the stack
-}
-
-// Will change the screen to the chosen screen
-void goTo(screen* next)
-{
-	// If somehow the current screen was chosen, ignore
-	if (next == curr)
-		return;
-
-	prev.push(curr); // Add the current screen to the stack
-	for (int i = 0; i < curr->size(); i++) // Hide every window in the current screen
-		ShowWindow(curr->at(i), SW_HIDE);
-	for (int i = 0; i < next->size(); i++) // Show every window in the next screen
-		ShowWindow(next->at(i), SW_SHOW);
-	curr = next;						   // Update current screen
 }

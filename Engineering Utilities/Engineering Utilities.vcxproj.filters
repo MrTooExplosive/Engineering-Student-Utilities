@@ -27,9 +27,15 @@
     <ClInclude Include="Engineering Utilities.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="screen.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engineering Utilities.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="screen.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
