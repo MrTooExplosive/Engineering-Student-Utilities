@@ -2,10 +2,10 @@
 
 screen::screen()
 {
-	text = "";
+	text = L"";
 }
 
-screen::screen(std::string msg)
+screen::screen(std::wstring msg)
 {
 	text = msg;
 }
@@ -25,12 +25,12 @@ HWND screen::at(unsigned short i) const
 	return windows.at(i);
 }
 
-std::string screen::getText() const
+std::wstring screen::getText() const
 {
 	return text;
 }
 
-void screen::goBack()
+void screen::goBack(HWND& hWnd)
 {
 	if (prev.empty())
 		return;
@@ -41,9 +41,10 @@ void screen::goBack()
 		ShowWindow(prev.top()->at(i), SW_SHOW);
 	curr = prev.top();
 	prev.pop();
+	RedrawWindow(hWnd, NULL, NULL, RDW_ERASE | RDW_INVALIDATE | RDW_INTERNALPAINT | RDW_UPDATENOW | RDW_ALLCHILDREN);
 }
 
-void screen::goTo(screen* next)
+void screen::goTo(screen* next, HWND& hWnd)
 {
 	if (next == curr)
 		return;
@@ -54,6 +55,7 @@ void screen::goTo(screen* next)
 	for (int i = 0; i < next->size(); i++)
 		ShowWindow(next->at(i), SW_SHOW);
 	curr = next;
+	RedrawWindow(hWnd, NULL, NULL, RDW_ERASE | RDW_INVALIDATE | RDW_INTERNALPAINT | RDW_UPDATENOW | RDW_ALLCHILDREN);
 }
 
 screen* screen::getCurr()

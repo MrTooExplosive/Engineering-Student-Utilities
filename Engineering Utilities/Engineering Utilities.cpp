@@ -3,7 +3,10 @@
 #include <vector>
 #include <stack>
 #include <string>
+#include <cstring>
 #include "screen.h"
+
+auto count = 0;
 
 // Give each button a unique ID
 #define MATH_BUTTON 100
@@ -18,10 +21,10 @@
 #define QUARTIC_FUNC_CHECK 111
 
 // Screens to be used
-screen home("Choose an application.");
-screen math("Choose an application.");
-screen roots("Choose an appliction.");
-screen analyticalRoots("Choose a type of function.");
+screen home(L"Choose an application.");
+screen math(L"Choose an application.");
+screen roots(L"Choose an application.");
+screen analyticalRoots(L"Choose a type of function.");
 
 LRESULT CALLBACK WndProc(_In_ HWND, _In_ UINT, _In_ WPARAM, _In_ LPARAM);
 
@@ -240,24 +243,26 @@ LRESULT CALLBACK WndProc(_In_ HWND hWnd, _In_ UINT message, _In_ WPARAM wParam, 
 		switch (LOWORD(wParam))
 		{
 		case MATH_BUTTON: // Each menu button will simply change the screen
-			screen::goTo(&math);
+			screen::goTo(&math, hWnd);
 			break;
 		case ROOT_BUTTON:
-			screen::goTo(&roots);
+			screen::goTo(&roots, hWnd);
 			break;
 		case ANAL_ROOT_BUTTON:
-			screen::goTo(&analyticalRoots);
+			screen::goTo(&analyticalRoots, hWnd);
 			break;
 		case BACK_BUTTON:
-			screen::goBack();
+			screen::goBack(hWnd);
 			break;
 		}
 		break;
 	case WM_PAINT:
+	{
 		hdc = BeginPaint(hWnd, &ps);
 		TextOut(hdc, 5, 5, (LPCWSTR)(screen::getCurr()->getText().c_str()), screen::getCurr()->getText().length());
 		EndPaint(hWnd, &ps);
 		break;
+	}
 	case WM_DESTROY:
 		PostQuitMessage(0);
 		break;
